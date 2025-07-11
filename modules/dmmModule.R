@@ -60,6 +60,7 @@ dmmUI <- function(id) {
         ),
         shiny::tabPanel("Top drivers",
                         shiny::htmlOutput(ns("critUsed2")),
+                        shiny::downloadButton(ns("downloadDrivers"), "Download drivers table"),
                         shiny::plotOutput(ns("driverPlot"), height = "600px")
         )
       ), width = 9)
@@ -151,7 +152,7 @@ dmmServer <- function(id) {
       
       drv <- melt(fitted(best)); names(drv) <- c("OTU", "Cluster", "Contribution")
       drv$Cluster <- factor(paste0("Cluster_", drv$Cluster))
-      rv$drivers <- drv |> group_by(Cluster) |> filter(abs(Contribution) > quantile(abs(Contribution), 0.8)) |> ungroup()
+      rv$drivers <- drv |> group_by(Cluster) |> slice_max(order_by = abs(Contribution), n = 10, with_ties = FALSE) |> ungroup()
       
       rv$raw <- raw  # Save original data
       
@@ -197,7 +198,18 @@ dmmServer <- function(id) {
     output$driverPlot <- renderPlot({ shiny::req(rv$drivers);
       ggplot(rv$drivers, aes(x = reorder_within(OTU, Contribution, Cluster), y = Contribution, fill = Cluster)) +
         geom_col(show.legend = FALSE) +
+        geom_text(aes(label = round(Contribution, 2)), hjust = ifelse(rv$drivers$Contribution >= 0, -0.1, 1.1), size = 3) +
         scale_x_reordered() + coord_flip() + facet_wrap(~Cluster, scales = "free_y") +
         theme_minimal() + labs(x = "Taxa", y = "Contribution") })
+    
+    output$downloadDrivers <- shiny::downloadHandler(
+      filename = function() "top_drivers.tsv",
+      content  = function(file) {
+        drv <- rv$drivers
+        if (!is.null(drv)) {
+          write.table(drv, file, sep = "\t", quote = FALSE, row.names = FALSE)
+        }
+      }
+    )
   })
 }
