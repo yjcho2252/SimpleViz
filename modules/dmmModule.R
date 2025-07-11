@@ -32,7 +32,7 @@ dmmUI <- function(id) {
       shiny::downloadButton(ns("exampleDownload"), "Download example data"),
       shiny::br(), shiny::hr(),
       
-      shiny::numericInput(ns("maxK"), "Max clusters to test", value = 5,  min = 2, step = 1),
+      shiny::numericInput(ns("maxK"), "Max clusters to test", value = 3,  min = 2, step = 1),
       shiny::numericInput(ns("chosenK"), "Force number of clusters (0 = auto)", value = 0, min = 0, step = 1),
       shiny::selectInput(ns("criterion"), "Selection criterion (auto mode)",
                          choices = c("BIC", "AIC", "Laplace"), selected = "Laplace"),
@@ -152,7 +152,7 @@ dmmServer <- function(id) {
       
       drv <- melt(fitted(best)); names(drv) <- c("OTU", "Cluster", "Contribution")
       drv$Cluster <- factor(paste0("Cluster_", drv$Cluster))
-      rv$drivers <- drv |> group_by(Cluster) |> slice_max(order_by = abs(Contribution), n = 10, with_ties = FALSE) |> ungroup()
+      rv$drivers <- drv |> group_by(Cluster) |> slice_max(order_by = abs(Contribution), n = 10, with_ties = FALSE) |> arrange(Cluster, desc(abs(Contribution))) |> ungroup()
       
       rv$raw <- raw  # Save original data
       
@@ -164,9 +164,7 @@ dmmServer <- function(id) {
     observeEvent(input$run,  { shiny::req(input$countFile); runDMM(input$countFile$datapath) })
     # Auto-load example (cached) once at start-up
     observeEvent(TRUE, {
-      if (file.exists(CACHE_PATH)) {
-        tmp <- readRDS(CACHE_PATH); rv$metrics <- tmp$metrics; rv$member <- tmp$member; rv$drivers <- tmp$drivers; rv$critTxt <- tmp$critTxt; rv$raw <- tmp$raw
-      } else runDMM(EX_PATH, cache = TRUE)
+      runDMM(EX_PATH, cache = TRUE)
     }, once = TRUE)
     
     ## Outputs
@@ -195,12 +193,17 @@ dmmServer <- function(id) {
         }
       })
     
-    output$driverPlot <- renderPlot({ shiny::req(rv$drivers);
-      ggplot(rv$drivers, aes(x = reorder_within(OTU, Contribution, Cluster), y = Contribution, fill = Cluster)) +
+    output$driverPlot <- renderPlot({
+      shiny::req(rv$drivers)
+      drv <- rv$drivers
+      drv <- droplevels(drv)  # 불필요한 factor 제거
+      print(table(drv$Cluster))  # 각 Cluster별 10개인지 콘솔에 출력 (디버깅용)
+      ggplot(drv, aes(x = reorder(OTU, Contribution), y = Contribution, fill = Cluster)) +
         geom_col(show.legend = FALSE) +
-        geom_text(aes(label = round(Contribution, 2)), hjust = ifelse(rv$drivers$Contribution >= 0, -0.1, 1.1), size = 3) +
-        scale_x_reordered() + coord_flip() + facet_wrap(~Cluster, scales = "free_y") +
-        theme_minimal() + labs(x = "Taxa", y = "Contribution") })
+        geom_text(aes(label = round(Contribution, 2)), hjust = ifelse(drv$Contribution >= 0, -0.1, 1.1), size = 3) +
+        coord_flip() + facet_wrap(~Cluster, scales = "free_y") +
+        theme_minimal() + labs(x = "Taxa", y = "Contribution")
+    })
     
     output$downloadDrivers <- shiny::downloadHandler(
       filename = function() "top_drivers.tsv",
