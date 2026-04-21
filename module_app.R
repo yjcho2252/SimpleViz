@@ -46,7 +46,6 @@ source("modules/correlationModule.R")
 #source("modules/GenesyntenyModule.R")
 # Load some fonts
 #font_add_google("Tinos", "Times New Roman")
-# Docker 환경에서도 폰트를 찾을 수 있도록 절대 경로 사용
 if (file.exists("/usr/share/fonts/truetype/tinos/Tinos-Regular.ttf")) {
   font_add("Times New Roman", regular = "/usr/share/fonts/truetype/tinos/Tinos-Regular.ttf")
 } else if (file.exists("Tinos-Regular.ttf")) {
@@ -137,19 +136,19 @@ ui <- fluidPage(
       topUI("top")
     ),
     nav_panel(
-      title = "Box/Violin/Dot Plot", 
+      title = "Box/Violin/Dot plot", 
       icon = icon("chart-bar"),
       boxplotUI("boxplot")
     ),
     nav_panel(
-      title = "Ordination Plot", 
+      title = "Ordination plot", 
       icon = icon("project-diagram"),
       pcaUI("pca")
     ),
     nav_menu(
       title = "Differential analysis",
       icon = icon("vial-circle-check"),
-      nav_panel("Volcano Plot", icon = icon("chart-line"), volcanoUI("volcano")),
+      nav_panel("Volcano plot", icon = icon("chart-line"), volcanoUI("volcano")),
       nav_panel("DESeq2", icon = icon("vial-circle-check"), deseqUI("DESeq2"))
     ),
     nav_menu(

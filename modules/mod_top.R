@@ -8,7 +8,7 @@ topUI <- function(id) {
   tagList(
     fluidPage(
       tags$head(
-        tags$style(HTML(".top-card { background-color: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 20px; }"))
+        tags$style(HTML(".top-card { background-color: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 20px; } .well { margin-bottom: 20px; }"))
       ),
       fluidRow(
         column(
@@ -17,7 +17,7 @@ topUI <- function(id) {
             class = "top-card",
             h1("Welcome to SimpleViz"),
             p("SimpleViz is a web-based Shiny app for exploring tabular omics/microbiome data andgenerating publication-ready plots and analyses from your data."),
-            p("Choose one of the tabs above to start with Box/Violin/Dot Plot, Ordination, Volcano, Heatmap, DESeq2, Correlation matrix, or see citation information."),
+            p("Choose one of the tabs above to start with Box/Violin/Dot plot, Ordination plot, Differential analysis, Pattern discovery, or see citation information."),
             tags$ul(
               tags$li("Use the panel controls in each module to paste or upload your data."),
               tags$li("Customize plot appearance, color mapping, and export settings."),
@@ -44,10 +44,10 @@ topUI <- function(id) {
           width = 12,
           wellPanel(
             h3("Modules"),
-            p("1. Box/Violin/Dot Plot: Create boxplots, violin plots, or dot plots to visualize distributions of your data across groups."),
-            p("2. Paste your data into the input box or use the example data provided."),
-            p("3. Adjust plot settings, colors, and labels to fit your needs."),
-            p("4. Download the resulting figure in PNG, SVG, or PDF format.")
+            p("1. Box/Violin/Dot plot: Create boxplots, violin plots, or dot plots to visualize distributions of your data across groups."),
+            p("2. Ordination plot: Generate PCA or NMDS plots to explore sample relationships based on your data."),
+            p("3. Differential analysis: Perform DESeq2 analysis or create volcano plots to identify significant features."),
+            p("4. Pattern discovery: Create heatmaps or correlation matrices to identify patterns and relationships")
           )
         ),
 

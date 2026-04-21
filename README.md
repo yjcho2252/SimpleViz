@@ -7,37 +7,25 @@ SimpleViz is an R Shiny-based interactive data visualization tool designed for b
 You can access the live version of SimpleViz at: https://mglab.shinyapps.io/simpleviz/
 
 ## Features
+- Example dataset included for quick testing and demonstration
+- Multiple modules for different types of analyses and visualizations
 
-### 1. Box/Violin/Dot Plot Module
+### 1. Box/Violin/Dot plot Module
 - Interactive box plots, violin plots, and dot plots
 - Statistical analysis (t-test, ANOVA, Kruskal-Wallis)
 - Customizable appearance and colors
-- Example dataset included
 
-### 2. Correlation Analysis Module
-- Correlation matrix visualization
-- Statistical significance testing
-- Customizable correlation methods
+### 2. Ordination plot
+- PCA and NMDS plots for exploring sample relationships
 
-### 3. DESeq2 Analysis Module
-- Differential expression analysis
-- Interactive volcano plots
-- Statistical filtering options
+### 3. Differential analysis
+- DESeq2 analysis for identifying differentially expressed features
+- Volcano plots for visualizing significant features
 
-### 4. Heatmap Module
-- Interactive heatmap visualization
-- Hierarchical clustering
-- Customizable color schemes
+### 4. Pattern discovery
+- Heatmap visualization for identifying patterns in the data
+- Correlation matrix for exploring relationships between variables
 
-### 5. PCA Module
-- Principal Component Analysis
-- Interactive 2D/3D plots
-- Variable contribution visualization
-
-### 6. Volcano Plot Module
-- Differential expression visualization
-- Interactive point selection
-- Customizable thresholds
 
 ## Installation
 

@@ -1,3 +1,4 @@
+260421 : Added bar plot, removed ANCOM-BC2 and DMM clustering modules, reorganized top menu with categorization.
 250618 : Updated DMM cluster function
 250609 : Updated ANCOM-BC2 differential abundance function
 250428 : Added SVG download feature and various bug fixes
@@ -7,4 +8,3 @@
 250106 : Correlation matrix was added
 250103 : logo was added
 241231 : Citation was added
-
