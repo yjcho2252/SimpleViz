@@ -26,7 +26,6 @@ pcaUI <- function(id) {
   ns <- NS(id)
   
   tagList(
-    titlePanel("Ordination Plot"),
     sidebarLayout(
       sidebarPanel(
         # File upload

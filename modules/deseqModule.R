@@ -24,7 +24,6 @@ ex_meta <- data.frame(
 deseqUI <- function(id) {
   ns <- NS(id)
   tagList(
-    titlePanel("DESeq2"),
     tags$head(
       tags$style(HTML("
               .button-space {

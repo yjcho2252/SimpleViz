@@ -11,7 +11,6 @@ boxplot_default_data <- data.frame(
 boxplotUI <- function(id) {
   ns <- NS(id)
   tagList(
-    titlePanel("Box/Violin/Dot Plot with Jittered Points"),
     tags$head(
       tags$style(HTML("
               .button-space {

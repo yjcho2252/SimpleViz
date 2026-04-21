@@ -19,7 +19,6 @@ correlationUI <- function(id) {
   ns <- NS(id)
   
   tagList(
-    titlePanel("Correlation matrix"),
     tags$head(
       tags$style(HTML("
               .button-space {

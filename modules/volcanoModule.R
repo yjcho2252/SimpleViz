@@ -17,7 +17,6 @@ volcanoUI <- function(id) {
   ns <- NS(id)
   
   tagList(
-    titlePanel("Volcano Plot"),
     sidebarLayout(
       sidebarPanel(
         fileInput(ns("volcano_file"), "Upload your TSV file", 

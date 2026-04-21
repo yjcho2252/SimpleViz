@@ -4,7 +4,6 @@
 citationUI <- function(id) {
   ns <- NS(id)
   tagList(
-    titlePanel("Citation"),
     mainPanel(
       h3("How to cite SimpleViz"),
       p("If you use SimpleViz in your research, please cite:"),

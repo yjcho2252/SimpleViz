@@ -47,3 +47,10 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# VS Code settings
+.vscode/
+
+# Docker files (local/test versions)
+Dockerfile-*
+.dockerignore

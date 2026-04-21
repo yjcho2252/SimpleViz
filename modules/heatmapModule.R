@@ -16,7 +16,6 @@ heatmapUI <- function(id) {
   ns <- NS(id)
   
   tagList(
-    titlePanel("Heatmap"),
     tags$head(
       tags$style(HTML("
               .button-space {
