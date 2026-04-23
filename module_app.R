@@ -31,6 +31,7 @@ library(phyloseq)
 library(DirichletMultinomial)
 library(tidytext)
 library(bslib)
+library(rhandsontable)
 
 # Load configuration and modules
 source("modules/mod_top.R")
@@ -136,7 +137,7 @@ ui <- fluidPage(
       topUI("top")
     ),
     nav_panel(
-      title = "Box/Violin/Dot plot", 
+      title = "Box/Violin/Dot/Bar plot", 
       icon = icon("chart-bar"),
       boxplotUI("boxplot")
     ),

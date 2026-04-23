@@ -23,6 +23,7 @@ volcanoUI <- function(id) {
                   accept = c("text/tab-separated-values", 
                              "text/plain", ".tsv", ".txt")),
         downloadButton(ns("download_example"), "Example Data"),
+        hr(),
         
         selectInput(ns("x_col"), "Select log2 Fold Change column", ""),
         selectInput(ns("y_col"), "Select p-value column", ""),

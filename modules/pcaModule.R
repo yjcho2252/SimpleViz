@@ -34,6 +34,7 @@ pcaUI <- function(id) {
         
         # Example data download
         downloadButton(ns("downloadPCAData"), "Example Data"),
+        hr(),
         
         # Analysis method (PCA/NMDS)
         radioButtons(ns("analysis_method"), "Analysis method:", choices = c("PCA", "NMDS"), selected = "PCA"),

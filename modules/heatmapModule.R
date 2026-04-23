@@ -7,7 +7,7 @@ set.seed(123)
 genes   <- paste0("Gene", 1:5)
 samples <- paste0("Sample", 1:3)
 
-mat_data <- matrix(runif(5 * 3, min = 0, max = 10), nrow = 5, ncol = 3)
+mat_data <- matrix(round(runif(5 * 3, min = 0, max = 10), 2), nrow = 5, ncol = 3)
 rownames(mat_data) <- genes
 colnames(mat_data) <- samples
 
@@ -20,6 +20,13 @@ heatmapUI <- function(id) {
       tags$style(HTML("
               .button-space {
                 margin-bottom: 20px;
+              }
+              .matrix-label {
+                display: block;
+                margin-bottom: 8px;
+              }
+              .matrix-table-space {
+                margin-bottom: 12px;
               }
               .col-sm-4 {
                 position: sticky;
@@ -37,10 +44,12 @@ heatmapUI <- function(id) {
       sidebarPanel(
         position = "left",
         
-        # (1) Tab-separated text input
-        textAreaInput(ns("matrix_input"), "Paste your matrix data (tab-separated):",
-                      rows = 10,
-                      placeholder = "gene\tSample1\tSample2\tSample3\nGene1\t2.875\t0.455\t9.563\nGene2\t7.883\t5.281\t4.533\nGene3\t4.089\t8.924\t6.775\nGene4\t8.830\t5.514\t5.726\nGene5\t9.404\t4.566\t1.029"),
+        # (1) Matrix input using rhandsontable
+        tags$label("Paste your matrix data (tab-separated):", class = "matrix-label"),
+        div(
+          class = "matrix-table-space",
+          rhandsontable::rHandsontableOutput(ns("matrix_table"))
+        ),
         
         div(class = "button-space",
             fluidRow(
@@ -105,36 +114,53 @@ heatmapServer <- function(id, exampleHeatmapData = mat_data, exampleAnnotation =
     function(input, output, session) {
       ns <- session$ns
       
-      # (A) reactiveVal to store data entered by user in text area
+      output$matrix_table <- rhandsontable::renderRHandsontable({
+        table_data <- data.frame(Gene = rownames(exampleHeatmapData), exampleHeatmapData, check.names = FALSE)
+        rownames(table_data) <- NULL
+
+        rhandsontable::rhandsontable(
+          table_data,
+          rowHeaders = NULL,
+          height = 300,
+          useTypes = FALSE,
+          readOnly = FALSE
+        ) %>%
+          rhandsontable::hot_table(minCols = 2, minRows = 1) %>%
+          rhandsontable::hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+      })
+
+      # (A) reactiveVal to store data entered by user in handsontable
       parsed_text_data <- reactiveVal(NULL)
       
-      # (B) Parse and store data from text area when Submit Data button is clicked
+      # (B) Parse and store data from table when Submit Data button is clicked
       observeEvent(input$submit, {
-        req(input$matrix_input)
-        
-        # Read string from text area
-        data_lines <- strsplit(input$matrix_input, "\n")[[1]]
-        
-        # Parse table with tab separator
-        df <- read.table(
-          textConnection(data_lines),
-          sep = "\t", 
-          header = TRUE,
-          check.names = FALSE
-        )
-        
-        # First column is gene names (row names), rest are sample values
-        mat <- as.matrix(df[,-1])
-        rownames(mat) <- df[[1]]
-        
-        # Assign to parsed_text_data
-        parsed_text_data(mat)
+        req(input$matrix_table)
+
+        tryCatch({
+          df <- rhandsontable::hot_to_r(input$matrix_table)
+          validate(need(!is.null(df) && ncol(df) >= 2, "Please provide at least one ID column and one numeric column."))
+
+          gene_ids <- as.character(df[[1]])
+          missing_idx <- is.na(gene_ids) | trimws(gene_ids) == ""
+          gene_ids[missing_idx] <- paste0("Row", which(missing_idx))
+
+          value_df <- df[, -1, drop = FALSE]
+          value_df[] <- lapply(value_df, function(col) suppressWarnings(as.numeric(as.character(col))))
+
+          mat <- as.matrix(value_df)
+          rownames(mat) <- gene_ids
+
+          validate(need(any(!is.na(mat)), "Please enter at least one numeric value in the matrix."))
+          parsed_text_data(mat)
+        }, error = function(e) {
+          showNotification(paste("Error reading table data:", e$message), type = "error")
+        })
       })
       
       
       # (C) reactive that returns data to be used in heatmap
       heatmap_data <- reactive({
-        # 1. Use parsed data from text input if available
+        # 1. Use parsed data from table input if available
         if(!is.null(parsed_text_data())) {
           return(parsed_text_data())
         }

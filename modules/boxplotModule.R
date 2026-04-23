@@ -16,6 +16,13 @@ boxplotUI <- function(id) {
               .button-space {
                 margin-bottom: 20px;
               }
+              .matrix-label {
+                display: block;
+                margin-bottom: 8px;
+              }
+              .matrix-table-space {
+                margin-bottom: 12px;
+              }
               .col-sm-4 {
                 position: sticky;
                 top: 60px;
@@ -31,9 +38,10 @@ boxplotUI <- function(id) {
     sidebarLayout(
       position = "left",
       sidebarPanel(
-        textAreaInput(ns("matrix_input"), "Paste your matrix data (tab-separated):",
-          rows = 10,
-          placeholder = "dose\tlen\tsupp\n0.5\t4.2\tVC\n0.5\t11.5\tVC\n0.5\t7.3\tVC\n1\t16.5\tVC\n1\t16.5\tVC\n1\t15.2\tVC\n2\t19.7\tVC\n2\t23.3\tVC\n2\t23.6\tVC\n0.5\t15.2\tOJ\n0.5\t21.5\tOJ\n0.5\t17.6\tOJ\n1\t22.4\tOJ\n1\t25.8\tOJ\n1\t19.7\tOJ\n2\t28.5\tOJ\n2\t33.9\tOJ\n2\t30.9\tOJ"
+        tags$label("Paste your matrix data (tab-separated):", class = "matrix-label"),
+        div(
+          class = "matrix-table-space",
+          rhandsontable::rHandsontableOutput(ns("matrix_table"))
         ),
         div(
           class = "button-space",
@@ -42,6 +50,12 @@ boxplotUI <- function(id) {
             column(6, downloadButton(ns("download_example"), "Example Data"))
           )
         ),
+        fileInput(
+          ns("upload_tsv"),
+          "Upload your TSV file",
+          accept = c("text/tab-separated-values", "text/plain", ".tsv", ".txt")
+        ),
+        hr(),
         selectInput(ns("plot_type"), "Select Plot Type:",
           choices = c("Box Plot", "Violin Plot", "Dot Plot", "Bar Plot"),
           selected = "Box Plot"
@@ -105,6 +119,23 @@ boxplotServer <- function(id, default_data = boxplot_default_data) {
       )
     })
 
+    output$matrix_table <- rhandsontable::renderRHandsontable({
+      table_data <- data()
+      table_data[] <- lapply(table_data, function(col) {
+        if (is.factor(col)) as.character(col) else col
+      })
+
+      rhandsontable::rhandsontable(
+        table_data,
+        rowHeaders = NULL,
+        height = 300,
+        useTypes = FALSE,
+        readOnly = FALSE
+      ) %>%
+        rhandsontable::hot_table(minCols = 1) %>%
+        rhandsontable::hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+    })
+
     # Box plot: Initialize color palette
     observe({
       req(data())
@@ -126,18 +157,10 @@ boxplotServer <- function(id, default_data = boxplot_default_data) {
 
     # **Important modification**: Added fill=TRUE and NA removal option
     observeEvent(input$submit, {
-      req(input$matrix_input)
+      req(input$matrix_table)
       tryCatch(
         {
-          # Read the data with proper column types
-          matrix_data <- read.table(
-            text = input$matrix_input,
-            header = TRUE,
-            sep = "\t",
-            stringsAsFactors = TRUE, # Convert character columns to factors
-            na.strings = c("NA", ""), # Handle missing values
-            check.names = FALSE # Preserve column names as is
-          )
+          matrix_data <- rhandsontable::hot_to_r(input$matrix_table)
 
           # Ensure numeric columns are properly converted
           for (col in names(matrix_data)) {
@@ -152,7 +175,6 @@ boxplotServer <- function(id, default_data = boxplot_default_data) {
 
           # Update the data
           data(matrix_data)
-
           # Update variable selections
           updateSelectInput(session, "x_var", choices = names(matrix_data), selected = names(matrix_data)[1])
           updateSelectInput(session, "y_var", choices = names(matrix_data), selected = names(matrix_data)[2])
@@ -175,6 +197,75 @@ boxplotServer <- function(id, default_data = boxplot_default_data) {
         },
         error = function(e) {
           showNotification(paste("Error reading data:", e$message), type = "error")
+        }
+      )
+    })
+
+    observeEvent(input$upload_tsv, {
+      req(input$upload_tsv$datapath)
+      tryCatch(
+        {
+          uploaded_data <- read.delim(
+            input$upload_tsv$datapath,
+            header = TRUE,
+            sep = "\t",
+            stringsAsFactors = FALSE,
+            check.names = FALSE
+          )
+
+          validate(need(nrow(uploaded_data) > 0, "Uploaded file has no data rows."))
+          validate(need(ncol(uploaded_data) > 1, "Uploaded file must have at least two columns."))
+
+          # Convert character columns to numeric only when all non-empty values are numeric.
+          for (col in names(uploaded_data)) {
+            if (is.character(uploaded_data[[col]])) {
+              trimmed <- trimws(uploaded_data[[col]])
+              non_empty <- trimmed != "" & !is.na(trimmed)
+              num_col <- suppressWarnings(as.numeric(trimmed))
+              if (any(non_empty) && all(!is.na(num_col[non_empty]))) {
+                uploaded_data[[col]] <- num_col
+              }
+            }
+          }
+
+          uploaded_df <- uploaded_data
+          data(uploaded_df)
+          col_names <- names(uploaded_df)
+          x_col <- col_names[1]
+          numeric_cols <- col_names[sapply(uploaded_df, is.numeric)]
+          numeric_y_candidates <- setdiff(numeric_cols, x_col)
+          y_col <- if (length(numeric_y_candidates) > 0) {
+            numeric_y_candidates[1]
+          } else if (length(numeric_cols) > 0) {
+            numeric_cols[1]
+          } else {
+            col_names[min(2, length(col_names))]
+          }
+
+          updateSelectInput(session, "x_var", choices = col_names, selected = x_col)
+          updateSelectInput(session, "y_var", choices = col_names, selected = y_col)
+          updateTextInput(session, "xlab", value = x_col)
+          updateTextInput(session, "ylab", value = y_col)
+
+          if (is.numeric(uploaded_df[[y_col]])) {
+            y_values <- uploaded_df[[y_col]]
+            y_min_raw <- min(y_values, na.rm = TRUE)
+            y_max_raw <- max(y_values, na.rm = TRUE)
+            if (is.finite(y_min_raw) && is.finite(y_max_raw)) {
+              y_range <- y_max_raw - y_min_raw
+              y_pad <- max(1, y_range * 0.1)
+              updateNumericInput(session, "ymin", value = floor(y_min_raw - y_pad))
+              updateNumericInput(session, "ymax", value = ceiling(y_max_raw + y_pad))
+            }
+          }
+
+          groups <- levels(as.factor(uploaded_df[[x_col]]))
+          palette_vals <- rep(default_colors, length.out = length(groups))
+          color_palette(setNames(palette_vals, groups))
+          showNotification("TSV file uploaded successfully.", type = "message")
+        },
+        error = function(e) {
+          showNotification(paste("Error uploading TSV:", e$message), type = "error")
         }
       )
     })
@@ -228,6 +319,9 @@ boxplotServer <- function(id, default_data = boxplot_default_data) {
 
       data_plot <- data()
       data_plot[[input$x_var]] <- factor(data_plot[[input$x_var]], levels = input$x_order)
+      y_numeric <- suppressWarnings(as.numeric(as.character(data_plot[[input$y_var]])))
+      validate(need(any(!is.na(y_numeric)), "Selected Y-axis variable must be numeric. Please choose a numeric column."))
+      data_plot[[input$y_var]] <- y_numeric
 
       groups <- levels(data_plot[[input$x_var]])
 
@@ -248,97 +342,105 @@ boxplotServer <- function(id, default_data = boxplot_default_data) {
       )
     })
 
-    output$plot <- renderPlot({
-      plot_info <- plot_data()
+    output$plot <- renderPlot(
+      {
+        plot_info <- plot_data()
 
-      p <- ggplot(plot_info$data, aes_string(x = plot_info$x_var, y = plot_info$y_var, group = plot_info$x_var)) +
-        labs(title = paste(plot_info$plot_type),
-             x = input$xlab, y = input$ylab) +
-        theme_pubr(base_size = input$fontSize) +
-        theme(
-          plot.title = element_text(hjust = 0.5, size = input$fontSize * 1.3),
-          axis.title = element_text(size = input$fontSize * 1.2),
-          axis.text = element_text(size = input$fontSize),
-          panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(),
-          panel.background = element_blank(),
-          axis.line = element_line(size = 1, color = "black"),
-          axis.ticks = element_line(size = 1, color = "black"),
-          legend.title = element_text(size = input$fontSize),
-          legend.text = element_text(size = input$fontSize * 0.8)
-        ) +
-        scale_x_discrete(limits = plot_info$groups) +
-        scale_fill_manual(values = color_palette(), name = input$xlab) +
-        coord_cartesian(ylim = c(input$ymin, input$ymax))
+        p <- ggplot(plot_info$data, aes_string(x = plot_info$x_var, y = plot_info$y_var, group = plot_info$x_var)) +
+          labs(
+            title = paste(plot_info$plot_type),
+            x = input$xlab, y = input$ylab
+          ) +
+          theme_pubr(base_size = input$fontSize) +
+          theme(
+            plot.title = element_text(hjust = 0.5, size = input$fontSize * 1.3),
+            axis.title = element_text(size = input$fontSize * 1.2),
+            axis.text = element_text(size = input$fontSize),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            panel.background = element_blank(),
+            axis.line = element_line(size = 1, color = "black"),
+            axis.ticks = element_line(size = 1, color = "black"),
+            legend.title = element_text(size = input$fontSize),
+            legend.text = element_text(size = input$fontSize * 0.8)
+          ) +
+          scale_x_discrete(limits = plot_info$groups) +
+          scale_fill_manual(values = color_palette(), name = input$xlab) +
+          scale_y_continuous(expand = expansion(mult = c(0, 0))) +
+          coord_cartesian(ylim = c(input$ymin, input$ymax))
 
-      if (plot_info$plot_type == "Box Plot") {
-        p <- p + geom_boxplot(aes(fill = .data[[plot_info$x_var]]),
-          width = input$barWidth,
-          size = input$lineThickness,
-          outlier.shape = NA
-        )
-      } else if (plot_info$plot_type == "Violin Plot") {
-        p <- p + geom_violin(aes(fill = .data[[plot_info$x_var]]),
-          width = input$barWidth,
-          size = input$lineThickness,
-          trim = FALSE
-        )
-      } else if (plot_info$plot_type == "Dot Plot") {
-        p <- p + geom_dotplot(aes(fill = .data[[plot_info$x_var]]),
-          binaxis = "y",
-          stackdir = "center",
-          dotsize = input$pointSize * 0.4,
-          binwidth = (input$ymax - input$ymin) / 50
-        )
-      } else if (plot_info$plot_type == "Bar Plot") {
-        p <- p + stat_summary(
-          aes(fill = .data[[plot_info$x_var]]),
-          fun = mean,
-          geom = "bar",
-          width = input$barWidth,
-          color = "black",
-          linewidth = input$lineThickness
-        ) +
-          stat_summary(
-            fun.data = mean_se,
-            geom = "errorbar",
-            width = input$barWidth * 0.3,
-            linewidth = input$lineThickness
+        if (plot_info$plot_type == "Box Plot") {
+          p <- p + geom_boxplot(aes(fill = .data[[plot_info$x_var]]),
+            width = input$barWidth,
+            size = input$lineThickness,
+            outlier.shape = NA
           )
-      }
-
-      if (plot_info$plot_type %in% c("Box Plot", "Violin Plot", "Bar Plot")) {
-        p <- p + geom_jitter(color = "black", width = 0.2, size = input$pointSize, alpha = 0.7)
-      }
-
-      p <- p + scale_fill_manual(values = plot_info$colors, name = input$xlab)
-
-      if (length(plot_info$groups) >= 2) {
-        formula <- as.formula(paste(plot_info$y_var, "~", plot_info$x_var))
-
-        if (input$stat_method == "t.test") {
-          stat_test <- compare_means(formula, data = plot_info$data, method = "t.test")
-          comparisons <- combn(plot_info$groups, 2, simplify = FALSE)
-
-          y_max <- max(plot_info$data[[plot_info$y_var]])
-          step <- (input$ymax - y_max) / (length(comparisons) + 1)
-          y_positions <- seq(y_max + step, by = step, length.out = length(comparisons))
-
-          p <- p + stat_compare_means(comparisons = comparisons,
-            label = "p.signif",
-            method = "t.test",
-                                      label.y = y_positions)
-        } else if (input$stat_method %in% c("anova", "kruskal.test")) {
-          stat_test <- compare_means(formula, data = plot_info$data, method = input$stat_method)
-          p <- p + stat_compare_means(label.y = max(plot_info$data[[plot_info$y_var]]) * 1.4,
-                                      method = input$stat_method)
+        } else if (plot_info$plot_type == "Violin Plot") {
+          p <- p + geom_violin(aes(fill = .data[[plot_info$x_var]]),
+            width = input$barWidth,
+            size = input$lineThickness,
+            trim = FALSE
+          )
+        } else if (plot_info$plot_type == "Dot Plot") {
+          p <- p + geom_dotplot(aes(fill = .data[[plot_info$x_var]]),
+            binaxis = "y",
+            stackdir = "center",
+            dotsize = input$pointSize * 0.4,
+            binwidth = (input$ymax - input$ymin) / 50
+          )
+        } else if (plot_info$plot_type == "Bar Plot") {
+          p <- p + stat_summary(
+            aes(fill = .data[[plot_info$x_var]]),
+            fun = mean,
+            geom = "bar",
+            width = input$barWidth,
+            color = "black",
+            linewidth = input$lineThickness
+          ) +
+            stat_summary(
+              fun.data = mean_se,
+              geom = "errorbar",
+              width = input$barWidth * 0.3,
+              linewidth = input$lineThickness
+            )
         }
-      }
 
-      # Add facet if facet variable is selected
-      if (plot_info$facet_var != "None") {
-        p <- p + facet_wrap(as.formula(paste("~", plot_info$facet_var)))
-      }
+        if (plot_info$plot_type %in% c("Box Plot", "Violin Plot", "Bar Plot")) {
+          p <- p + geom_jitter(color = "black", width = 0.2, size = input$pointSize, alpha = 0.7)
+        }
+
+        p <- p + scale_fill_manual(values = plot_info$colors, name = input$xlab)
+
+        if (length(plot_info$groups) >= 2) {
+          formula <- as.formula(paste(plot_info$y_var, "~", plot_info$x_var))
+
+          if (input$stat_method == "t.test") {
+            stat_test <- compare_means(formula, data = plot_info$data, method = "t.test")
+            comparisons <- combn(plot_info$groups, 2, simplify = FALSE)
+
+            y_max <- max(plot_info$data[[plot_info$y_var]])
+            step <- (input$ymax - y_max) / (length(comparisons) + 1)
+            y_positions <- seq(y_max + step, by = step, length.out = length(comparisons))
+
+            p <- p + stat_compare_means(
+              comparisons = comparisons,
+              label = "p.signif",
+              method = "t.test",
+              label.y = y_positions
+            )
+          } else if (input$stat_method %in% c("anova", "kruskal.test")) {
+            stat_test <- compare_means(formula, data = plot_info$data, method = input$stat_method)
+            p <- p + stat_compare_means(
+              label.y = max(plot_info$data[[plot_info$y_var]]) * 1.4,
+              method = input$stat_method
+            )
+          }
+        }
+
+        # Add facet if facet variable is selected
+        if (plot_info$facet_var != "None") {
+          p <- p + facet_wrap(as.formula(paste("~", plot_info$facet_var)))
+        }
 
         current_box_plot(p)
         p
@@ -398,13 +500,14 @@ boxplotServer <- function(id, default_data = boxplot_default_data) {
         paste0(input$filename, ".", tolower(input$export_format))
       },
       content = function(file) {
-        tryCatch({
-          if (is.null(current_box_plot())) {
-            stop("No plot available to save")
-          }
-          
-          # Ensure the plot is properly rendered
-          p <- current_box_plot()
+        tryCatch(
+          {
+            if (is.null(current_box_plot())) {
+              stop("No plot available to save")
+            }
+
+            # Ensure the plot is properly rendered
+            p <- current_box_plot()
 
             # Convert dimensions to inches (1 inch = 72 pixels)
             width_inches <- input$plotWidth / 72

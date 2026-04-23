@@ -17,7 +17,7 @@ topUI <- function(id) {
             class = "top-card",
             h1("Welcome to SimpleViz"),
             p("SimpleViz is a web-based Shiny app for exploring tabular omics/microbiome data andgenerating publication-ready plots and analyses from your data."),
-            p("Choose one of the tabs above to start with Box/Violin/Dot plot, Ordination plot, Differential analysis, Pattern discovery, or see citation information."),
+            p("Choose one of the tabs above to start with Box/Violin/Dot/Bar plot, Ordination plot, Differential analysis, Pattern discovery, or see citation information."),
             tags$ul(
               tags$li("Use the panel controls in each module to paste or upload your data."),
               tags$li("Customize plot appearance, color mapping, and export settings."),
@@ -44,7 +44,7 @@ topUI <- function(id) {
           width = 12,
           wellPanel(
             h3("Modules"),
-            p("1. Box/Violin/Dot plot: Create boxplots, violin plots, or dot plots to visualize distributions of your data across groups."),
+            p("1. Box/Violin/Dot/Bar plot: Create boxplots, violin plots, or dot plots to visualize distributions of your data across groups."),
             p("2. Ordination plot: Generate PCA or NMDS plots to explore sample relationships based on your data."),
             p("3. Differential analysis: Perform DESeq2 analysis or create volcano plots to identify significant features."),
             p("4. Pattern discovery: Create heatmaps or correlation matrices to identify patterns and relationships")

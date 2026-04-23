@@ -1,4 +1,5 @@
-260421 : Added bar plot, removed ANCOM-BC2 and DMM clustering modules, reorganized top menu with categorization.
+260422 : Changed plot input to editable matrix with TSV upload support
+260421 : Added bar plot, removed ANCOM-BC2 and DMM clustering modules, reorganized top menu
 250618 : Updated DMM cluster function
 250609 : Updated ANCOM-BC2 differential abundance function
 250428 : Added SVG download feature and various bug fixes

@@ -58,6 +58,7 @@ deseqUI <- function(id) {
         # (1-2) Example Data Download Button
         downloadButton(ns("download_ex_counts"), "Download Example Data"),
         br(), br(),
+        hr(),
         
         # (2) Available Samples (Select by Click)
         selectInput(
