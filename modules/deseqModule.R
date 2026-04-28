@@ -29,6 +29,79 @@ deseqUI <- function(id) {
               .button-space {
                 margin-bottom: 20px;
               }
+              .deseq-panel .form-group,
+              .deseq-panel .shiny-input-container {
+                margin-bottom: 10px;
+              }
+              .deseq-panel .form-control,
+              .deseq-panel .form-select,
+              .deseq-panel .btn,
+              .deseq-panel .selectize-input {
+                border-radius: 10px;
+                font-size: 12px;
+              }
+              .deseq-panel .control-label,
+              .deseq-panel .form-label,
+              .deseq-panel .shiny-input-container label {
+                font-size: 12px;
+                font-weight: 600;
+                color: #24445d;
+                margin-bottom: 4px;
+              }
+              .deseq-section {
+                background: rgba(255, 255, 255, 0.8);
+                border: 1px solid #dce6ec;
+                border-radius: 14px;
+                padding: 14px 14px 10px 14px;
+                margin-bottom: 12px;
+                box-shadow: 0 6px 14px rgba(20, 47, 70, 0.05);
+              }
+              .deseq-section-title {
+                font-family: 'Times New Roman', Georgia, serif;
+                font-size: 17px;
+                font-weight: 700;
+                color: #143149;
+                margin: 0 0 10px 0;
+                letter-spacing: 0.01em;
+              }
+              .deseq-section-note {
+                font-size: 11px;
+                color: #5b7284;
+                margin-bottom: 10px;
+                line-height: 1.5;
+              }
+              .matrix-label {
+                display: block;
+                margin-bottom: 8px;
+                font-weight: 700;
+                font-size: 12px;
+                letter-spacing: 0.02em;
+                color: #183247;
+              }
+              .matrix-table-space {
+                margin-bottom: 12px;
+              }
+              .button-space {
+                margin-bottom: 16px;
+              }
+              .deseq-panel .btn-default,
+              .deseq-panel .btn-secondary {
+                background: #f4f7fa;
+                border-color: #cdd9e1;
+                color: #1f3b53;
+              }
+              .deseq-panel .btn-primary {
+                background: #183b56;
+                border-color: #183b56;
+                color: #ffffff;
+              }
+              .deseq-panel .btn-primary:hover,
+              .deseq-panel .btn-primary:focus,
+              .deseq-panel .btn-primary:active {
+                background: #214d6f;
+                border-color: #214d6f;
+                color: #ffffff;
+              }
               .col-sm-4 {
                 position: sticky;
                 top: 60px;
@@ -42,79 +115,81 @@ deseqUI <- function(id) {
             "))
     ),
     sidebarLayout(
-      # (A) Left Sidebar
       sidebarPanel(
-        h4("Sample and Group Settings"),
-        
-        # (1) Count Data Upload
-        fileInput(
-          ns("count_file"),
-          label = "Upload Count Data (TSV)",
-          accept = c(".csv", ".tsv", ".txt")
+        div(
+          class = "deseq-panel",
+          div(
+            class = "deseq-section",
+            tags$h4("Data Input", class = "deseq-section-title"),
+            div("Upload a count matrix and use the controls below to assign two groups.", class = "deseq-section-note"),
+            tags$label("Paste your count data (tab-separated):", class = "matrix-label"),
+            div(
+              class = "matrix-table-space",
+              rhandsontable::rHandsontableOutput(ns("matrix_table"))
+            ),
+            div(
+              class = "button-space",
+              fluidRow(
+                column(5, actionButton(ns("submit"), "Submit Data")),
+                column(6, downloadButton(ns("download_ex_counts"), "Example Data"))
+              )
+            ),
+            fileInput(
+              ns("count_file"),
+              label = "Upload Count Data (TSV)",
+              accept = c(".csv", ".tsv", ".txt")
+            ),
+            helpText("Example data will be used if no file is uploaded.")
+          ),
+          div(
+            class = "deseq-section",
+            tags$h4("Sample Assignment", class = "deseq-section-title"),
+            selectInput(
+              ns("available_samples"),
+              label = "Available Samples",
+              choices = character(0),
+              selected = NULL,
+              multiple = TRUE,
+              selectize = FALSE,
+              size = 6
+            ),
+            fluidRow(
+              column(6, actionButton(ns("add_group1"), "-> Group1")),
+              column(6, actionButton(ns("add_group2"), "-> Group2"))
+            ),
+            textInput(ns("group1_name"), "Group 1 Name:", value = "Control"),
+            selectInput(
+              ns("group1_samples"),
+              label = "Group 1",
+              choices = character(0),
+              selected = NULL,
+              multiple = TRUE,
+              selectize = FALSE,
+              size = 6
+            ),
+            actionButton(ns("remove_group1"), "<- Remove"),
+            textInput(ns("group2_name"), "Group 2 Name:", value = "Treatment"),
+            selectInput(
+              ns("group2_samples"),
+              label = "Group 2",
+              choices = character(0),
+              selected = NULL,
+              multiple = TRUE,
+              selectize = FALSE,
+              size = 6
+            ),
+            actionButton(ns("remove_group2"), "<- Remove")
+          ),
+          div(
+            class = "deseq-section",
+            tags$h4("Run And Export", class = "deseq-section-title"),
+            actionButton(ns("run_deseq"), "Run DESeq2", class = "btn-primary"),
+            br(), br(),
+            downloadButton(ns("download_deseq_res"), "Download DESeq2 Result")
+          )
         ),
-        helpText("Example data will be used if no file is uploaded."),
-        br(),
-        
-        # (1-2) Example Data Download Button
-        downloadButton(ns("download_ex_counts"), "Download Example Data"),
-        br(), br(),
-        hr(),
-        
-        # (2) Available Samples (Select by Click)
-        selectInput(
-          ns("available_samples"),
-          label = "Available Samples",
-          choices = character(0),
-          selected = NULL,
-          multiple = TRUE,
-          selectize = FALSE,  # Turn off selectize to use size option
-          size = 6
-        ),
-        
-        # (3) Add Button: Selected Samples → Group1, Group2
-        fluidRow(
-          column(6, actionButton(ns("add_group1"), "-> G1")),
-          column(6, actionButton(ns("add_group2"), "-> G2"))
-        ),
-        br(),
-        
-        # (4) Group 1
-        textInput(ns("group1_name"), "Group 1 Name:", value = "Control"),
-        selectInput(
-          ns("group1_samples"),
-          label = "Group 1",
-          choices = character(0),
-          selected = NULL,
-          multiple = TRUE,
-          selectize = FALSE,
-          size = 6
-        ),
-        actionButton(ns("remove_group1"), "<- Remove"),
-        br(), br(),
-        
-        # (5) Group 2
-        textInput(ns("group2_name"), "Group 2 Name:", value = "Treatment"),
-        selectInput(
-          ns("group2_samples"),
-          label = "Group 2",
-          choices = character(0),
-          selected = NULL,
-          multiple = TRUE,
-          selectize = FALSE,
-          size = 6
-        ),
-        actionButton(ns("remove_group2"), "<- Remove"),
-        br(), br(),
-        
-        # (6) DESeq2 Run / Download Button
-        actionButton(ns("run_deseq"), "Run DESeq2", class = "btn-primary"),
-        br(), br(),
-        downloadButton(ns("download_deseq_res"), "Download DESeq2 Result"),
-        
-        width = 4  # Sidebar width adjustment
+        width = 4
       ),
-      
-      # (B) Right Main Area
       mainPanel(
         h4("DESeq2 Analysis Result"),
         DTOutput(ns("deseq_table"))
@@ -127,16 +202,110 @@ deseqUI <- function(id) {
 deseqServer <- function(id) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
+    parsed_table_counts <- reactiveVal(NULL)
+    table_input_data <- reactiveVal(NULL)
+
+    build_table_input <- function(df) {
+      table_df <- data.frame(Gene = rownames(df), df, check.names = FALSE, stringsAsFactors = FALSE)
+      table_matrix <- rbind(colnames(table_df), as.matrix(table_df))
+      table_output <- as.data.frame(table_matrix, stringsAsFactors = FALSE, check.names = FALSE)
+      names(table_output) <- paste0("V", seq_len(ncol(table_output)))
+      table_output
+    }
+
+    normalize_count_data <- function(df) {
+      normalized_df <- as.data.frame(df, stringsAsFactors = FALSE, check.names = FALSE)
+      normalized_df[] <- lapply(normalized_df, function(col) suppressWarnings(as.numeric(as.character(col))))
+      normalized_df
+    }
+
+    parse_table_input <- function(table_df) {
+      parsed_df <- as.data.frame(table_df, stringsAsFactors = FALSE, check.names = FALSE)
+      parsed_df[] <- lapply(parsed_df, function(col) trimws(as.character(col)))
+
+      non_empty_rows <- apply(parsed_df, 1, function(row) any(!is.na(row) & row != ""))
+      non_empty_cols <- apply(parsed_df, 2, function(col) any(!is.na(col) & col != ""))
+      parsed_df <- parsed_df[non_empty_rows, non_empty_cols, drop = FALSE]
+
+      validate(need(nrow(parsed_df) >= 2, "Please paste a header row and at least one data row."))
+      validate(need(ncol(parsed_df) >= 2, "Please provide a gene column and at least one sample column."))
+
+      headers <- as.character(unlist(parsed_df[1, ], use.names = FALSE))
+      headers[is.na(headers) | headers == ""] <- paste0("Column", seq_along(headers))[is.na(headers) | headers == ""]
+      headers <- make.unique(headers, sep = "_")
+
+      value_df <- parsed_df[-1, , drop = FALSE]
+      names(value_df) <- headers
+      validate(need(nrow(value_df) > 0, "Please provide at least one data row below the headers."))
+
+      gene_ids <- as.character(value_df[[1]])
+      missing_idx <- is.na(gene_ids) | trimws(gene_ids) == ""
+      gene_ids[missing_idx] <- paste0("Gene", which(missing_idx))
+
+      count_df <- value_df[, -1, drop = FALSE]
+      count_df <- normalize_count_data(count_df)
+      validate(need(ncol(count_df) > 0, "Please provide at least one sample column."))
+
+      count_mat <- as.data.frame(count_df, check.names = FALSE)
+      rownames(count_mat) <- gene_ids
+      count_mat
+    }
+
+    apply_count_data <- function(df) {
+      normalized_df <- normalize_count_data(df)
+      parsed_table_counts(normalized_df)
+      table_input_data(build_table_input(normalized_df))
+    }
+
+    table_input_data(build_table_input(ex_counts))
+
+    output$matrix_table <- rhandsontable::renderRHandsontable({
+      table_data <- table_input_data()
+      req(table_data)
+
+      rhandsontable::rhandsontable(
+        table_data,
+        colHeaders = FALSE,
+        rowHeaders = NULL,
+        height = 260,
+        useTypes = FALSE,
+        readOnly = FALSE
+      ) %>%
+        rhandsontable::hot_table(
+          minCols = ncol(table_data),
+          minRows = nrow(table_data),
+          minSpareRows = 0,
+          minSpareCols = 0,
+          stretchH = "all"
+        ) %>%
+        rhandsontable::hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+    })
+
+    observeEvent(input$submit, {
+      req(input$matrix_table)
+      tryCatch({
+        df <- rhandsontable::hot_to_r(input$matrix_table)
+        validate(need(!is.null(df), "Please paste TSV text into the table before submitting."))
+        apply_count_data(parse_table_input(df))
+      }, error = function(e) {
+        showNotification(paste("Error reading table data:", e$message), type = "error")
+      })
+    })
     
     # (A) Get Count Data (Upload or Example)
     countData <- reactive({
-      if (!is.null(input$count_file)) {
+      if (!is.null(parsed_table_counts())) {
+        parsed_table_counts()
+      } else if (!is.null(input$count_file)) {
         ext <- tools::file_ext(input$count_file$name)
         if (ext %in% c("csv")) {
-          read.csv(input$count_file$datapath, row.names = 1, header = TRUE, check.names = FALSE)
+          df <- read.csv(input$count_file$datapath, row.names = 1, header = TRUE, check.names = FALSE)
         } else {
-          read.delim(input$count_file$datapath, row.names = 1, header = TRUE, check.names = FALSE)
+          df <- read.delim(input$count_file$datapath, row.names = 1, header = TRUE, check.names = FALSE)
         }
+        normalized_df <- normalize_count_data(df)
+        apply_count_data(normalized_df)
+        normalized_df
       } else {
         ex_counts
       }

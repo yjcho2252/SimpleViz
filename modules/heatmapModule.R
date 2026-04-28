@@ -19,14 +19,79 @@ heatmapUI <- function(id) {
     tags$head(
       tags$style(HTML("
               .button-space {
-                margin-bottom: 20px;
+                margin-bottom: 16px;
               }
               .matrix-label {
                 display: block;
                 margin-bottom: 8px;
+                font-weight: 700;
+                font-size: 12px;
+                letter-spacing: 0.02em;
+                color: #183247;
               }
               .matrix-table-space {
                 margin-bottom: 12px;
+              }
+              .heatmap-panel .form-group,
+              .heatmap-panel .shiny-input-container {
+                margin-bottom: 10px;
+              }
+              .heatmap-panel .form-control,
+              .heatmap-panel .form-select,
+              .heatmap-panel .btn,
+              .heatmap-panel .selectize-input {
+                border-radius: 10px;
+                font-size: 12px;
+              }
+              .heatmap-panel .control-label,
+              .heatmap-panel .form-label,
+              .heatmap-panel .shiny-input-container label {
+                font-size: 12px;
+                font-weight: 600;
+                color: #24445d;
+                margin-bottom: 4px;
+              }
+              .heatmap-panel .irs-grid-text,
+              .heatmap-panel .selectize-dropdown,
+              .heatmap-panel .selectize-dropdown-content,
+              .heatmap-panel .selectize-dropdown .option {
+                font-size: 12px;
+              }
+              .heatmap-section {
+                background: rgba(255, 255, 255, 0.8);
+                border: 1px solid #dce6ec;
+                border-radius: 14px;
+                padding: 14px 14px 10px 14px;
+                margin-bottom: 12px;
+                box-shadow: 0 6px 14px rgba(20, 47, 70, 0.05);
+              }
+              .heatmap-section-title {
+                font-family: 'Times New Roman', Georgia, serif;
+                font-size: 17px;
+                font-weight: 700;
+                color: #143149;
+                margin: 0 0 10px 0;
+                letter-spacing: 0.01em;
+              }
+              .heatmap-section-note {
+                font-size: 11px;
+                color: #5b7284;
+                margin-bottom: 10px;
+                line-height: 1.5;
+              }
+              .heatmap-panel .btn-default,
+              .heatmap-panel .btn-secondary {
+                background: #f4f7fa;
+                border-color: #cdd9e1;
+                color: #1f3b53;
+              }
+              .heatmap-panel .btn-primary {
+                background: #183b56;
+                border-color: #183b56;
+              }
+              .heatmap-panel .btn:hover {
+                transform: translateY(-1px);
+                transition: all 0.15s ease;
               }
               .col-sm-4 {
                 position: sticky;
@@ -43,61 +108,57 @@ heatmapUI <- function(id) {
     sidebarLayout(
       sidebarPanel(
         position = "left",
-        
-        # (1) Matrix input using rhandsontable
-        tags$label("Paste your matrix data (tab-separated):", class = "matrix-label"),
         div(
-          class = "matrix-table-space",
-          rhandsontable::rHandsontableOutput(ns("matrix_table"))
-        ),
-        
-        div(class = "button-space",
-            fluidRow(
-              column(5, 
-                     actionButton(ns("submit"), "Submit Data")),
-              column(6, 
-                     downloadButton(ns("download_example"), "Example Data"))
-            )
-        ),
-        
-        # (2,3) File upload
-        fileInput(ns("heatmap_file"), "Upload your TSV file",
-                  accept = c("text/tab-separated-values", 
-                             "text/plain", ".tsv", ".txt")),
-        hr(),
-        
-        # (4) Heatmap parameter settings
-        selectInput(ns("scale_option"), "Scale:", 
-                    choices = c("none", "row", "column"), 
-                    selected = "none"),
-        checkboxInput(ns("cluster_rows"), "Cluster Rows", value = TRUE),
-        checkboxInput(ns("cluster_cols"), "Cluster Columns", value = TRUE),
-        selectInput(ns("dist_method"), "Distance Method:",
-                    choices = c("euclidean", "manhattan", "maximum", 
-                                "canberra", "binary", "minkowski"),
-                    selected = "euclidean"),
-        selectInput(ns("hclust_method"), "Clustering Method:",
-                    choices = c("complete", "ward.D", "ward.D2", 
-                                "single", "average", "mcquitty", 
-                                "median", "centroid"),
-                    selected = "complete"),
-        
-        selectInput(ns("color_palette"), "Color Palette:", 
-                    choices = c("RdBu", "Blues", "Greens", "Reds", 
-                                "YlOrRd", "YlGnBu", "heat.colors"), 
-                    selected = "RdBu"),
-#        sliderInput(ns("num_colors"), "Number of Colors:", 
-#                    min = 3, max = 100, value = 9),
-        
-        # **Font size settings (added)**
-        sliderInput(ns("font_size"), "Font Size:",
-                    min = 5, max = 20, value = 10, step = 1),
-        
-        # (5) Plot size settings
-        sliderInput(ns("plot_width"), "Plot Width:", 
-                    min = 400, max = 1200, value = 700, step = 50),
-        sliderInput(ns("plot_height"), "Plot Height:", 
-                    min = 300, max = 1000, value = 600, step = 50)
+          class = "heatmap-panel",
+          div(
+            class = "heatmap-section",
+            tags$h4("Data Input", class = "heatmap-section-title"),
+            div("Paste a tab-separated matrix directly into the table or upload a TSV file.", class = "heatmap-section-note"),
+            tags$label("Paste your matrix data (tab-separated):", class = "matrix-label"),
+            div(
+              class = "matrix-table-space",
+              rhandsontable::rHandsontableOutput(ns("matrix_table"))
+            ),
+            div(class = "button-space",
+                fluidRow(
+                  column(5, actionButton(ns("submit"), "Submit Data")),
+                  column(6, downloadButton(ns("download_example"), "Example Data"))
+                )
+            ),
+            fileInput(ns("heatmap_file"), "Upload your TSV file",
+                      accept = c("text/tab-separated-values", 
+                                 "text/plain", ".tsv", ".txt"))
+          ),
+          div(
+            class = "heatmap-section",
+            tags$h4("Clustering", class = "heatmap-section-title"),
+            selectInput(ns("scale_option"), "Scale:", 
+                        choices = c("none", "row", "column"), 
+                        selected = "none"),
+            checkboxInput(ns("cluster_rows"), "Cluster Rows", value = TRUE),
+            checkboxInput(ns("cluster_cols"), "Cluster Columns", value = TRUE),
+            selectInput(ns("dist_method"), "Distance Method:",
+                        choices = c("euclidean", "manhattan", "maximum", 
+                                    "canberra", "binary", "minkowski"),
+                        selected = "euclidean"),
+            selectInput(ns("hclust_method"), "Clustering Method:",
+                        choices = c("complete", "ward.D", "ward.D2", 
+                                    "single", "average", "mcquitty", 
+                                    "median", "centroid"),
+                        selected = "complete")
+          ),
+          div(
+            class = "heatmap-section",
+            tags$h4("Appearance", class = "heatmap-section-title"),
+            selectInput(ns("color_palette"), "Color Palette:", 
+                        choices = c("RdBu", "Blues", "Greens", "Reds", 
+                                    "YlOrRd", "YlGnBu", "heat.colors"), 
+                        selected = "RdBu"),
+            numericInput(ns("font_size"), "Font Size:", value = 10, min = 5, max = 20, step = 1),
+            numericInput(ns("plot_width"), "Plot Width:", value = 700, min = 400, max = 1200, step = 50),
+            numericInput(ns("plot_height"), "Plot Height:", value = 600, min = 300, max = 1000, step = 50)
+          )
+        )
       ),
       mainPanel(
         plotOutput(ns("heatmap_plot"), width = "100%", height = "auto")
@@ -113,24 +174,78 @@ heatmapServer <- function(id, exampleHeatmapData = mat_data, exampleAnnotation =
     id,
     function(input, output, session) {
       ns <- session$ns
+      parsed_text_data <- reactiveVal(NULL)
+      table_input_data <- reactiveVal(NULL)
+
+      build_table_input <- function(mat) {
+        table_df <- data.frame(Gene = rownames(mat), mat, check.names = FALSE, stringsAsFactors = FALSE)
+        table_matrix <- rbind(colnames(table_df), as.matrix(table_df))
+        table_output <- as.data.frame(table_matrix, stringsAsFactors = FALSE, check.names = FALSE)
+        names(table_output) <- paste0("V", seq_len(ncol(table_output)))
+        table_output
+      }
+
+      parse_table_input <- function(table_df) {
+        parsed_df <- as.data.frame(table_df, stringsAsFactors = FALSE, check.names = FALSE)
+        parsed_df[] <- lapply(parsed_df, function(col) trimws(as.character(col)))
+
+        non_empty_rows <- apply(parsed_df, 1, function(row) any(!is.na(row) & row != ""))
+        non_empty_cols <- apply(parsed_df, 2, function(col) any(!is.na(col) & col != ""))
+        parsed_df <- parsed_df[non_empty_rows, non_empty_cols, drop = FALSE]
+
+        validate(need(nrow(parsed_df) >= 2, "Please paste a header row and at least one data row."))
+        validate(need(ncol(parsed_df) >= 2, "Please provide at least one ID column and one numeric column."))
+
+        headers <- as.character(unlist(parsed_df[1, ], use.names = FALSE))
+        headers[is.na(headers) | headers == ""] <- paste0("Column", seq_along(headers))[is.na(headers) | headers == ""]
+        headers <- make.unique(headers, sep = "_")
+
+        value_df <- parsed_df[-1, , drop = FALSE]
+        names(value_df) <- headers
+        validate(need(nrow(value_df) > 0, "Please provide at least one data row below the headers."))
+
+        gene_ids <- as.character(value_df[[1]])
+        missing_idx <- is.na(gene_ids) | trimws(gene_ids) == ""
+        gene_ids[missing_idx] <- paste0("Row", which(missing_idx))
+
+        numeric_df <- value_df[, -1, drop = FALSE]
+        numeric_df[] <- lapply(numeric_df, function(col) suppressWarnings(as.numeric(as.character(col))))
+        mat <- as.matrix(numeric_df)
+        rownames(mat) <- gene_ids
+        colnames(mat) <- names(numeric_df)
+
+        validate(need(any(!is.na(mat)), "Please enter at least one numeric value in the matrix."))
+        mat
+      }
+
+      apply_heatmap_matrix <- function(mat) {
+        parsed_text_data(mat)
+        table_input_data(build_table_input(mat))
+      }
+
+      table_input_data(build_table_input(exampleHeatmapData))
       
       output$matrix_table <- rhandsontable::renderRHandsontable({
-        table_data <- data.frame(Gene = rownames(exampleHeatmapData), exampleHeatmapData, check.names = FALSE)
-        rownames(table_data) <- NULL
+        table_data <- table_input_data()
+        req(table_data)
 
         rhandsontable::rhandsontable(
           table_data,
+          colHeaders = FALSE,
           rowHeaders = NULL,
           height = 300,
           useTypes = FALSE,
           readOnly = FALSE
         ) %>%
-          rhandsontable::hot_table(minCols = 2, minRows = 1) %>%
+          rhandsontable::hot_table(
+            minCols = ncol(table_data),
+            minRows = nrow(table_data),
+            minSpareRows = 0,
+            minSpareCols = 0,
+            stretchH = "all"
+          ) %>%
           rhandsontable::hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
       })
-
-      # (A) reactiveVal to store data entered by user in handsontable
-      parsed_text_data <- reactiveVal(NULL)
       
       # (B) Parse and store data from table when Submit Data button is clicked
       observeEvent(input$submit, {
@@ -138,20 +253,9 @@ heatmapServer <- function(id, exampleHeatmapData = mat_data, exampleAnnotation =
 
         tryCatch({
           df <- rhandsontable::hot_to_r(input$matrix_table)
-          validate(need(!is.null(df) && ncol(df) >= 2, "Please provide at least one ID column and one numeric column."))
-
-          gene_ids <- as.character(df[[1]])
-          missing_idx <- is.na(gene_ids) | trimws(gene_ids) == ""
-          gene_ids[missing_idx] <- paste0("Row", which(missing_idx))
-
-          value_df <- df[, -1, drop = FALSE]
-          value_df[] <- lapply(value_df, function(col) suppressWarnings(as.numeric(as.character(col))))
-
-          mat <- as.matrix(value_df)
-          rownames(mat) <- gene_ids
-
-          validate(need(any(!is.na(mat)), "Please enter at least one numeric value in the matrix."))
-          parsed_text_data(mat)
+          validate(need(!is.null(df), "Please paste TSV text into the table before submitting."))
+          mat <- parse_table_input(df)
+          apply_heatmap_matrix(mat)
         }, error = function(e) {
           showNotification(paste("Error reading table data:", e$message), type = "error")
         })
@@ -174,6 +278,8 @@ heatmapServer <- function(id, exampleHeatmapData = mat_data, exampleAnnotation =
           )
           mat <- as.matrix(df[,-1])
           rownames(mat) <- df[[1]]
+          colnames(mat) <- colnames(df)[-1]
+          apply_heatmap_matrix(mat)
           return(mat)
         }
         # 3. Otherwise use example data

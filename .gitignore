@@ -54,3 +54,4 @@ rsconnect/
 # Docker files (local/test versions)
 Dockerfile-*
 .dockerignore
+.positai

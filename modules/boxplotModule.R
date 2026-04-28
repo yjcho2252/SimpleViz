@@ -14,14 +14,85 @@ boxplotUI <- function(id) {
     tags$head(
       tags$style(HTML("
               .button-space {
-                margin-bottom: 20px;
+                margin-bottom: 16px;
               }
               .matrix-label {
                 display: block;
                 margin-bottom: 8px;
+                font-weight: 700;
+                font-size: 12px;
+                letter-spacing: 0.02em;
+                color: #183247;
               }
               .matrix-table-space {
                 margin-bottom: 12px;
+              }
+              .boxplot-panel .form-group,
+              .boxplot-panel .shiny-input-container {
+                margin-bottom: 10px;
+              }
+              .boxplot-panel .form-control,
+              .boxplot-panel .form-select,
+              .boxplot-panel .btn,
+              .boxplot-panel .selectize-input {
+                border-radius: 10px;
+                font-size: 12px;
+              }
+              .boxplot-panel .control-label,
+              .boxplot-panel .form-label,
+              .boxplot-panel .shiny-input-container label {
+                font-size: 12px;
+                font-weight: 600;
+                color: #24445d;
+                margin-bottom: 4px;
+              }
+              .boxplot-panel .irs-grid-text,
+              .boxplot-panel .selectize-dropdown,
+              .boxplot-panel .selectize-dropdown-content,
+              .boxplot-panel .selectize-dropdown .option {
+                font-size: 12px;
+              }
+              .boxplot-section {
+                background: rgba(255, 255, 255, 0.8);
+                border: 1px solid #dce6ec;
+                border-radius: 14px;
+                padding: 14px 14px 10px 14px;
+                margin-bottom: 12px;
+                box-shadow: 0 6px 14px rgba(20, 47, 70, 0.05);
+              }
+              .boxplot-section-title {
+                font-family: 'Times New Roman', Georgia, serif;
+                font-size: 17px;
+                font-weight: 700;
+                color: #143149;
+                margin: 0 0 10px 0;
+                letter-spacing: 0.01em;
+              }
+              .boxplot-section-note {
+                font-size: 11px;
+                color: #5b7284;
+                margin-bottom: 10px;
+                line-height: 1.5;
+              }
+              .boxplot-panel .btn-default,
+              .boxplot-panel .btn-secondary {
+                background: #f4f7fa;
+                border-color: #cdd9e1;
+                color: #1f3b53;
+              }
+              .boxplot-panel .btn-primary {
+                background: #183b56;
+                border-color: #183b56;
+              }
+              .boxplot-panel .btn:hover {
+                transform: translateY(-1px);
+                transition: all 0.15s ease;
+              }
+              .boxplot-panel .hr-soft {
+                height: 1px;
+                background: linear-gradient(90deg, rgba(24, 59, 86, 0), rgba(24, 59, 86, 0.22), rgba(24, 59, 86, 0));
+                border: 0;
+                margin: 8px 0 2px 0;
               }
               .col-sm-4 {
                 position: sticky;
@@ -38,63 +109,90 @@ boxplotUI <- function(id) {
     sidebarLayout(
       position = "left",
       sidebarPanel(
-        tags$label("Paste your matrix data (tab-separated):", class = "matrix-label"),
         div(
-          class = "matrix-table-space",
-          rhandsontable::rHandsontableOutput(ns("matrix_table"))
-        ),
-        div(
-          class = "button-space",
-          fluidRow(
-            column(5, actionButton(ns("submit"), "Submit Data")),
-            column(6, downloadButton(ns("download_example"), "Example Data"))
-          )
-        ),
-        fileInput(
-          ns("upload_tsv"),
-          "Upload your TSV file",
-          accept = c("text/tab-separated-values", "text/plain", ".tsv", ".txt")
-        ),
-        hr(),
-        selectInput(ns("plot_type"), "Select Plot Type:",
-          choices = c("Box Plot", "Violin Plot", "Dot Plot", "Bar Plot"),
-          selected = "Box Plot"
-        ),
-        selectInput(ns("x_var"), "Select X-axis Variable:", choices = names(boxplot_default_data), selected = "dose"),
-        selectInput(ns("y_var"), "Select Y-axis Variable:", choices = names(boxplot_default_data), selected = "len"),
-        selectInput(ns("facet_var"), "Select Facet Variable (Optional):",
-          choices = c("None", names(boxplot_default_data)),
-          selected = "None"
-        ),
-        numericInput(ns("ymin"), "Y-axis minimum:", value = 0),
-        numericInput(ns("ymax"), "Y-axis maximum:", value = 50),
-        textInput(ns("xlab"), "X-axis Label:", value = "Dose"),
-        textInput(ns("ylab"), "Y-axis Label:", value = "Length"),
-        selectInput(ns("stat_method"), "Statistical Method:",
-          choices = c(
-            "t-test" = "t.test",
-            "ANOVA" = "anova",
-            "Kruskal-Wallis" = "kruskal.test"
+          class = "boxplot-panel",
+          div(
+            class = "boxplot-section",
+            tags$h4("Data Input", class = "boxplot-section-title"),
+            div("Paste tab-separated data directly into the table or load a TSV file.", class = "boxplot-section-note"),
+            tags$label("Paste your matrix data (tab-separated):", class = "matrix-label"),
+            div(
+              class = "matrix-table-space",
+              rhandsontable::rHandsontableOutput(ns("matrix_table"))
+            ),
+            div(
+              class = "button-space",
+              fluidRow(
+                column(5, actionButton(ns("submit"), "Submit Data")),
+                column(6, downloadButton(ns("download_example"), "Example Data"))
+              )
+            ),
+            fileInput(
+              ns("upload_tsv"),
+              "Upload your TSV file",
+              accept = c("text/tab-separated-values", "text/plain", ".tsv", ".txt")
+            )
           ),
-          selected = "t.test"
-        ),
-        uiOutput(ns("x_order_input")),
-        uiOutput(ns("color_inputs")),
-        actionButton(ns("apply_colors"), "Apply Colors"),
-        sliderInput(ns("pointSize"), "Data Point Size:", min = 0, max = 5, value = 2, step = 0.1),
-        sliderInput(ns("barWidth"), "Bar Width:", min = 0.1, max = 1, value = 0.7, step = 0.05),
-        sliderInput(ns("lineThickness"), "Box/Violin Line Thickness:", min = 0, max = 2, value = 1.0, step = 0.05),
-        sliderInput(ns("fontSize"), "Font Size:", min = 6, max = 24, value = 12, step = 1),
-        sliderInput(ns("plotWidth"), "Plot Width (pixels):", value = 400, min = 200, max = 2000, step = 10),
-        sliderInput(ns("plotHeight"), "Plot Height (pixels):", value = 600, min = 200, max = 1500, step = 10),
-        selectInput(ns("export_format"), "Export Format:",
-          choices = c("PNG", "SVG", "PDF"),
-          selected = "PNG"
-        ),
-        numericInput(ns("dpi"), "DPI (for PNG only):", value = 300, min = 72, max = 600),
-        textInput(ns("filename"), "Export Filename:", value = "boxplot"),
-        downloadButton(ns("save_plot"), "Download Plot"),
-        hr()
+          div(
+            class = "boxplot-section",
+            tags$h4("Plot Mapping", class = "boxplot-section-title"),
+            selectInput(ns("plot_type"), "Select Plot Type:",
+              choices = c("Box Plot", "Violin Plot", "Dot Plot", "Bar Plot"),
+              selected = "Box Plot"
+            ),
+            selectInput(ns("x_var"), "Select X-axis Variable:", choices = names(boxplot_default_data), selected = "dose"),
+            selectInput(ns("y_var"), "Select Y-axis Variable:", choices = names(boxplot_default_data), selected = "len"),
+            selectInput(ns("facet_var"), "Select Facet Variable (Optional):",
+              choices = c("None", names(boxplot_default_data)),
+              selected = "None"
+            ),
+            uiOutput(ns("x_order_input"))
+          ),
+          div(
+            class = "boxplot-section",
+            tags$h4("Labels And Stats", class = "boxplot-section-title"),
+            numericInput(ns("ymin"), "Y-axis minimum:", value = 0),
+            numericInput(ns("ymax"), "Y-axis maximum:", value = 50),
+            textInput(ns("xlab"), "X-axis Label:", value = "Dose"),
+            textInput(ns("ylab"), "Y-axis Label:", value = "Length"),
+            selectInput(ns("stat_method"), "Statistical Method:",
+              choices = c(
+                "t-test" = "t.test",
+                "ANOVA" = "anova",
+                "Kruskal-Wallis" = "kruskal.test"
+              ),
+              selected = "t.test"
+            )
+          ),
+          div(
+            class = "boxplot-section",
+            tags$h4("Style Controls", class = "boxplot-section-title"),
+            selectInput(
+              ns("palette_name"),
+              "Color Palette:",
+              choices = c("Set2", "Dark2", "Paired", "Set1", "Pastel1", "Blues", "Greens", "RdPu", "YlGnBu"),
+              selected = "Set2"
+            ),
+            tags$hr(class = "hr-soft"),
+            numericInput(ns("pointSize"), "Data Point Size:", value = 2, min = 0, max = 5, step = 0.1),
+            numericInput(ns("barWidth"), "Bar Width:", value = 0.7, min = 0.1, max = 1, step = 0.05),
+            numericInput(ns("lineThickness"), "Box/Violin Line Thickness:", value = 1.0, min = 0, max = 2, step = 0.05),
+            numericInput(ns("fontSize"), "Font Size:", value = 12, min = 6, max = 24, step = 1),
+            numericInput(ns("plotWidth"), "Plot Width (pixels):", value = 400, min = 200, max = 2000, step = 10),
+            numericInput(ns("plotHeight"), "Plot Height (pixels):", value = 600, min = 200, max = 1500, step = 10)
+          ),
+          div(
+            class = "boxplot-section",
+            tags$h4("Export", class = "boxplot-section-title"),
+            selectInput(ns("export_format"), "Export Format:",
+              choices = c("PNG", "SVG", "PDF"),
+              selected = "PNG"
+            ),
+            numericInput(ns("dpi"), "DPI (for PNG only):", value = 300, min = 72, max = 600),
+            textInput(ns("filename"), "Export Filename:", value = "boxplot"),
+            downloadButton(ns("save_plot"), "Download Plot")
+          )
+        )
       ),
       mainPanel(
         uiOutput(ns("dynamic_output"))
@@ -109,8 +207,125 @@ boxplotServer <- function(id, default_data = boxplot_default_data) {
     current_box_plot <- reactiveVal()
     data <- reactiveVal(default_data)
     color_palette <- reactiveVal(NULL)
+    table_input_data <- reactiveVal(NULL)
 
     default_colors <- c("#F8766D", "#00BA38", "#619CFF", "#F564E3", "#00BFC4", "#B79F00")
+    default_palette_name <- "Set2"
+
+    get_palette_values <- function(palette_name, n_groups) {
+      if (n_groups <= 0) {
+        return(character(0))
+      }
+
+      if (palette_name %in% rownames(RColorBrewer::brewer.pal.info)) {
+        max_colors <- RColorBrewer::brewer.pal.info[palette_name, "maxcolors"]
+        base_colors <- RColorBrewer::brewer.pal(min(max(3, n_groups), max_colors), palette_name)
+        return(grDevices::colorRampPalette(base_colors)(n_groups))
+      }
+
+      rep(default_colors, length.out = n_groups)
+    }
+
+    update_group_palette <- function(group_names, palette_name = NULL) {
+      selected_palette <- palette_name %||% input$palette_name %||% default_palette_name
+      palette_vals <- get_palette_values(selected_palette, length(group_names))
+      color_palette(setNames(palette_vals, group_names))
+    }
+
+    build_table_input <- function(df) {
+      df_char <- as.data.frame(lapply(df, function(col) {
+        if (is.factor(col)) as.character(col) else as.character(col)
+      }), stringsAsFactors = FALSE, check.names = FALSE)
+
+      base_matrix <- rbind(colnames(df_char), as.matrix(df_char))
+      table_df <- as.data.frame(base_matrix, stringsAsFactors = FALSE, check.names = FALSE)
+      names(table_df) <- paste0("V", seq_len(ncol(table_df)))
+      table_df
+    }
+
+    parse_table_input <- function(table_df) {
+      parsed_df <- as.data.frame(table_df, stringsAsFactors = FALSE, check.names = FALSE)
+      parsed_df[] <- lapply(parsed_df, function(col) trimws(as.character(col)))
+
+      non_empty_rows <- apply(parsed_df, 1, function(row) any(!is.na(row) & row != ""))
+      non_empty_cols <- apply(parsed_df, 2, function(col) any(!is.na(col) & col != ""))
+
+      parsed_df <- parsed_df[non_empty_rows, non_empty_cols, drop = FALSE]
+
+      validate(need(nrow(parsed_df) >= 2, "Please paste a header row and at least one data row."))
+      validate(need(ncol(parsed_df) >= 2, "Please provide at least two columns."))
+
+      headers <- as.character(unlist(parsed_df[1, ], use.names = FALSE))
+      headers[is.na(headers) | headers == ""] <- paste0("Column", seq_along(headers))[is.na(headers) | headers == ""]
+      headers <- make.unique(headers, sep = "_")
+
+      value_df <- parsed_df[-1, , drop = FALSE]
+      names(value_df) <- headers
+      validate(need(nrow(value_df) > 0, "Please provide at least one data row below the headers."))
+
+      value_df
+    }
+
+    normalize_boxplot_data <- function(df) {
+      normalized_df <- df
+
+      for (col in names(normalized_df)) {
+        if (is.character(normalized_df[[col]])) {
+          trimmed <- trimws(normalized_df[[col]])
+          non_empty <- trimmed != "" & !is.na(trimmed)
+          num_col <- suppressWarnings(as.numeric(trimmed))
+          if (any(non_empty) && all(!is.na(num_col[non_empty]))) {
+            normalized_df[[col]] <- num_col
+          }
+        }
+      }
+
+      normalized_df
+    }
+
+    apply_boxplot_data <- function(new_data, update_table = TRUE) {
+      normalized_data <- normalize_boxplot_data(new_data)
+      data(normalized_data)
+      if (isTRUE(update_table)) {
+        table_input_data(build_table_input(normalized_data))
+      }
+
+      col_names <- names(normalized_data)
+      x_col <- col_names[1]
+      numeric_cols <- col_names[sapply(normalized_data, is.numeric)]
+      numeric_y_candidates <- setdiff(numeric_cols, x_col)
+      y_col <- if (length(numeric_y_candidates) > 0) {
+        numeric_y_candidates[1]
+      } else if (length(numeric_cols) > 0) {
+        numeric_cols[1]
+      } else {
+        col_names[min(2, length(col_names))]
+      }
+
+      updateSelectInput(session, "x_var", choices = col_names, selected = x_col)
+      updateSelectInput(session, "y_var", choices = col_names, selected = y_col)
+      updateSelectInput(session, "facet_var", choices = c("None", col_names), selected = "None")
+      updateTextInput(session, "xlab", value = x_col)
+      updateTextInput(session, "ylab", value = y_col)
+
+      if (is.numeric(normalized_data[[y_col]])) {
+        y_values <- normalized_data[[y_col]]
+        y_min_raw <- min(y_values, na.rm = TRUE)
+        y_max_raw <- max(y_values, na.rm = TRUE)
+
+        if (is.finite(y_min_raw) && is.finite(y_max_raw)) {
+          y_range <- y_max_raw - y_min_raw
+          y_pad <- max(1, y_range * 0.1)
+          updateNumericInput(session, "ymin", value = floor(y_min_raw - y_pad))
+          updateNumericInput(session, "ymax", value = ceiling(y_max_raw + y_pad))
+        }
+      }
+
+      groups <- levels(as.factor(normalized_data[[x_col]]))
+      update_group_palette(groups)
+    }
+
+    table_input_data(build_table_input(default_data))
 
     output$dynamic_output <- renderUI({
       tagList(
@@ -120,19 +335,24 @@ boxplotServer <- function(id, default_data = boxplot_default_data) {
     })
 
     output$matrix_table <- rhandsontable::renderRHandsontable({
-      table_data <- data()
-      table_data[] <- lapply(table_data, function(col) {
-        if (is.factor(col)) as.character(col) else col
-      })
+      table_data <- table_input_data()
+      req(table_data)
 
       rhandsontable::rhandsontable(
         table_data,
+        colHeaders = FALSE,
         rowHeaders = NULL,
         height = 300,
         useTypes = FALSE,
         readOnly = FALSE
       ) %>%
-        rhandsontable::hot_table(minCols = 1) %>%
+        rhandsontable::hot_table(
+          minCols = ncol(table_data),
+          minRows = nrow(table_data),
+          minSpareRows = 0,
+          minSpareCols = 0,
+          stretchH = "all"
+        ) %>%
         rhandsontable::hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
     })
 
@@ -141,7 +361,7 @@ boxplotServer <- function(id, default_data = boxplot_default_data) {
       req(data())
       groups <- levels(as.factor(data()[[input$x_var]]))
       if (is.null(color_palette())) {
-        color_palette(setNames(default_colors[1:length(groups)], groups))
+        update_group_palette(groups, default_palette_name)
       }
     })
 
@@ -161,39 +381,9 @@ boxplotServer <- function(id, default_data = boxplot_default_data) {
       tryCatch(
         {
           matrix_data <- rhandsontable::hot_to_r(input$matrix_table)
-
-          # Ensure numeric columns are properly converted
-          for (col in names(matrix_data)) {
-            if (is.character(matrix_data[[col]])) {
-              # Try to convert to numeric if possible
-              num_col <- suppressWarnings(as.numeric(matrix_data[[col]]))
-              if (!all(is.na(num_col))) {
-                matrix_data[[col]] <- num_col
-              }
-            }
-          }
-
-          # Update the data
-          data(matrix_data)
-          # Update variable selections
-          updateSelectInput(session, "x_var", choices = names(matrix_data), selected = names(matrix_data)[1])
-          updateSelectInput(session, "y_var", choices = names(matrix_data), selected = names(matrix_data)[2])
-
-          # Update labels
-          updateTextInput(session, "xlab", value = names(matrix_data)[1])
-          updateTextInput(session, "ylab", value = names(matrix_data)[2])
-
-          # Update y-axis range
-          if (is.numeric(matrix_data[[names(matrix_data)[2]]])) {
-            y_min <- min(matrix_data[[names(matrix_data)[2]]], na.rm = TRUE) - 10
-            y_max <- max(matrix_data[[names(matrix_data)[2]]], na.rm = TRUE) + 10
-            updateNumericInput(session, "ymin", value = floor(y_min))
-            updateNumericInput(session, "ymax", value = ceiling(y_max))
-          }
-
-          # Update color palette
-          groups <- levels(as.factor(matrix_data[[names(matrix_data)[1]]]))
-          color_palette(setNames(default_colors[1:length(groups)], groups))
+          validate(need(!is.null(matrix_data), "Please paste TSV text into the table before submitting."))
+          parsed_data <- parse_table_input(matrix_data)
+          apply_boxplot_data(parsed_data)
         },
         error = function(e) {
           showNotification(paste("Error reading data:", e$message), type = "error")
@@ -215,53 +405,7 @@ boxplotServer <- function(id, default_data = boxplot_default_data) {
 
           validate(need(nrow(uploaded_data) > 0, "Uploaded file has no data rows."))
           validate(need(ncol(uploaded_data) > 1, "Uploaded file must have at least two columns."))
-
-          # Convert character columns to numeric only when all non-empty values are numeric.
-          for (col in names(uploaded_data)) {
-            if (is.character(uploaded_data[[col]])) {
-              trimmed <- trimws(uploaded_data[[col]])
-              non_empty <- trimmed != "" & !is.na(trimmed)
-              num_col <- suppressWarnings(as.numeric(trimmed))
-              if (any(non_empty) && all(!is.na(num_col[non_empty]))) {
-                uploaded_data[[col]] <- num_col
-              }
-            }
-          }
-
-          uploaded_df <- uploaded_data
-          data(uploaded_df)
-          col_names <- names(uploaded_df)
-          x_col <- col_names[1]
-          numeric_cols <- col_names[sapply(uploaded_df, is.numeric)]
-          numeric_y_candidates <- setdiff(numeric_cols, x_col)
-          y_col <- if (length(numeric_y_candidates) > 0) {
-            numeric_y_candidates[1]
-          } else if (length(numeric_cols) > 0) {
-            numeric_cols[1]
-          } else {
-            col_names[min(2, length(col_names))]
-          }
-
-          updateSelectInput(session, "x_var", choices = col_names, selected = x_col)
-          updateSelectInput(session, "y_var", choices = col_names, selected = y_col)
-          updateTextInput(session, "xlab", value = x_col)
-          updateTextInput(session, "ylab", value = y_col)
-
-          if (is.numeric(uploaded_df[[y_col]])) {
-            y_values <- uploaded_df[[y_col]]
-            y_min_raw <- min(y_values, na.rm = TRUE)
-            y_max_raw <- max(y_values, na.rm = TRUE)
-            if (is.finite(y_min_raw) && is.finite(y_max_raw)) {
-              y_range <- y_max_raw - y_min_raw
-              y_pad <- max(1, y_range * 0.1)
-              updateNumericInput(session, "ymin", value = floor(y_min_raw - y_pad))
-              updateNumericInput(session, "ymax", value = ceiling(y_max_raw + y_pad))
-            }
-          }
-
-          groups <- levels(as.factor(uploaded_df[[x_col]]))
-          palette_vals <- rep(default_colors, length.out = length(groups))
-          color_palette(setNames(palette_vals, groups))
+          apply_boxplot_data(uploaded_data)
           showNotification("TSV file uploaded successfully.", type = "message")
         },
         error = function(e) {
@@ -291,27 +435,10 @@ boxplotServer <- function(id, default_data = boxplot_default_data) {
       )
     })
 
-    output$color_inputs <- renderUI({
+    observeEvent(input$palette_name, {
       req(data(), input$x_var)
       groups <- levels(as.factor(data()[[input$x_var]]))
-      current_palette <- color_palette() %||% setNames(default_colors[1:length(groups)], groups)
-
-      color_inputs <- lapply(seq_along(groups), function(i) {
-        colourInput(
-          inputId = session$ns(paste0("color", i)),
-          label = paste("Color for", groups[i]),
-          value = current_palette[groups[i]]
-        )
-      })
-
-      do.call(tagList, color_inputs)
-    })
-
-    observeEvent(input$apply_colors, {
-      req(data(), input$x_var)
-      groups <- levels(as.factor(data()[[input$x_var]]))
-      new_palette <- sapply(seq_along(groups), function(i) input[[paste0("color", i)]])
-      color_palette(setNames(new_palette, groups))
+      update_group_palette(groups, input$palette_name)
     })
 
     plot_data <- reactive({
@@ -327,8 +454,8 @@ boxplotServer <- function(id, default_data = boxplot_default_data) {
 
       current_palette <- color_palette()
       if (is.null(current_palette) || !all(groups %in% names(current_palette))) {
-        current_palette <- setNames(default_colors[1:length(groups)], groups)
-        color_palette(current_palette)
+        update_group_palette(groups)
+        current_palette <- color_palette()
       }
 
       list(
@@ -338,110 +465,117 @@ boxplotServer <- function(id, default_data = boxplot_default_data) {
         facet_var = input$facet_var,
         plot_type = input$plot_type,
         groups = groups,
-        colors = color_palette() %||% setNames(default_colors[1:length(groups)], groups)
+        colors = color_palette() %||% setNames(get_palette_values(input$palette_name %||% default_palette_name, length(groups)), groups)
       )
     })
 
+    build_boxplot <- function(text_scale = 1) {
+      plot_info <- plot_data()
+
+      p <- ggplot(plot_info$data, aes_string(x = plot_info$x_var, y = plot_info$y_var, group = plot_info$x_var)) +
+        labs(
+          title = paste(plot_info$plot_type),
+          x = input$xlab, y = input$ylab
+        ) +
+        theme_pubr(base_size = input$fontSize) +
+        theme(
+          plot.title = element_text(hjust = 0.5, size = (input$fontSize * 1.3) * text_scale),
+          axis.title = element_text(size = (input$fontSize * 1.2) * text_scale),
+          axis.text = element_text(size = input$fontSize * text_scale),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(),
+          axis.line = element_line(size = 1, color = "black"),
+          axis.ticks = element_line(size = 1, color = "black"),
+          legend.title = element_text(size = input$fontSize * text_scale),
+          legend.text = element_text(size = (input$fontSize * 0.8) * text_scale)
+        ) +
+        scale_x_discrete(limits = plot_info$groups) +
+        scale_fill_manual(values = color_palette(), name = input$xlab) +
+        scale_y_continuous(expand = expansion(mult = c(0, 0))) +
+        coord_cartesian(ylim = c(input$ymin, input$ymax))
+
+      if (plot_info$plot_type == "Box Plot") {
+        p <- p + geom_boxplot(aes(fill = .data[[plot_info$x_var]]),
+          width = input$barWidth,
+          size = input$lineThickness,
+          outlier.shape = NA
+        )
+      } else if (plot_info$plot_type == "Violin Plot") {
+        p <- p + geom_violin(aes(fill = .data[[plot_info$x_var]]),
+          width = input$barWidth,
+          size = input$lineThickness,
+          trim = FALSE
+        )
+      } else if (plot_info$plot_type == "Dot Plot") {
+        p <- p + geom_dotplot(aes(fill = .data[[plot_info$x_var]]),
+          binaxis = "y",
+          stackdir = "center",
+          dotsize = input$pointSize * 0.4,
+          binwidth = (input$ymax - input$ymin) / 50
+        )
+      } else if (plot_info$plot_type == "Bar Plot") {
+        p <- p + stat_summary(
+          aes(fill = .data[[plot_info$x_var]]),
+          fun = mean,
+          geom = "bar",
+          width = input$barWidth,
+          color = "black",
+          linewidth = input$lineThickness
+        ) +
+          stat_summary(
+            fun.data = mean_se,
+            geom = "errorbar",
+            width = input$barWidth * 0.3,
+            linewidth = input$lineThickness
+          )
+      }
+
+      if (plot_info$plot_type %in% c("Box Plot", "Violin Plot", "Bar Plot")) {
+        p <- p + geom_jitter(color = "black", width = 0.2, size = input$pointSize, alpha = 0.7)
+      }
+
+      p <- p + scale_fill_manual(values = plot_info$colors, name = input$xlab)
+
+      if (length(plot_info$groups) >= 2) {
+        formula <- as.formula(paste(plot_info$y_var, "~", plot_info$x_var))
+        stat_label_size <- (input$fontSize / ggplot2::.pt) * text_scale
+
+        if (input$stat_method == "t.test") {
+          comparisons <- combn(plot_info$groups, 2, simplify = FALSE)
+
+          y_max <- max(plot_info$data[[plot_info$y_var]])
+          step <- (input$ymax - y_max) / (length(comparisons) + 1)
+          y_positions <- seq(y_max + step, by = step, length.out = length(comparisons))
+
+          p <- p + stat_compare_means(
+            comparisons = comparisons,
+            label = "p.signif",
+            method = "t.test",
+            label.y = y_positions,
+            size = stat_label_size,
+            textsize = stat_label_size
+          )
+        } else if (input$stat_method %in% c("anova", "kruskal.test")) {
+          p <- p + stat_compare_means(
+            label.y = max(plot_info$data[[plot_info$y_var]]) * 1.4,
+            method = input$stat_method,
+            size = stat_label_size,
+            textsize = stat_label_size
+          )
+        }
+      }
+
+      if (plot_info$facet_var != "None") {
+        p <- p + facet_wrap(as.formula(paste("~", plot_info$facet_var)))
+      }
+
+      p
+    }
+
     output$plot <- renderPlot(
       {
-        plot_info <- plot_data()
-
-        p <- ggplot(plot_info$data, aes_string(x = plot_info$x_var, y = plot_info$y_var, group = plot_info$x_var)) +
-          labs(
-            title = paste(plot_info$plot_type),
-            x = input$xlab, y = input$ylab
-          ) +
-          theme_pubr(base_size = input$fontSize) +
-          theme(
-            plot.title = element_text(hjust = 0.5, size = input$fontSize * 1.3),
-            axis.title = element_text(size = input$fontSize * 1.2),
-            axis.text = element_text(size = input$fontSize),
-            panel.grid.major = element_blank(),
-            panel.grid.minor = element_blank(),
-            panel.background = element_blank(),
-            axis.line = element_line(size = 1, color = "black"),
-            axis.ticks = element_line(size = 1, color = "black"),
-            legend.title = element_text(size = input$fontSize),
-            legend.text = element_text(size = input$fontSize * 0.8)
-          ) +
-          scale_x_discrete(limits = plot_info$groups) +
-          scale_fill_manual(values = color_palette(), name = input$xlab) +
-          scale_y_continuous(expand = expansion(mult = c(0, 0))) +
-          coord_cartesian(ylim = c(input$ymin, input$ymax))
-
-        if (plot_info$plot_type == "Box Plot") {
-          p <- p + geom_boxplot(aes(fill = .data[[plot_info$x_var]]),
-            width = input$barWidth,
-            size = input$lineThickness,
-            outlier.shape = NA
-          )
-        } else if (plot_info$plot_type == "Violin Plot") {
-          p <- p + geom_violin(aes(fill = .data[[plot_info$x_var]]),
-            width = input$barWidth,
-            size = input$lineThickness,
-            trim = FALSE
-          )
-        } else if (plot_info$plot_type == "Dot Plot") {
-          p <- p + geom_dotplot(aes(fill = .data[[plot_info$x_var]]),
-            binaxis = "y",
-            stackdir = "center",
-            dotsize = input$pointSize * 0.4,
-            binwidth = (input$ymax - input$ymin) / 50
-          )
-        } else if (plot_info$plot_type == "Bar Plot") {
-          p <- p + stat_summary(
-            aes(fill = .data[[plot_info$x_var]]),
-            fun = mean,
-            geom = "bar",
-            width = input$barWidth,
-            color = "black",
-            linewidth = input$lineThickness
-          ) +
-            stat_summary(
-              fun.data = mean_se,
-              geom = "errorbar",
-              width = input$barWidth * 0.3,
-              linewidth = input$lineThickness
-            )
-        }
-
-        if (plot_info$plot_type %in% c("Box Plot", "Violin Plot", "Bar Plot")) {
-          p <- p + geom_jitter(color = "black", width = 0.2, size = input$pointSize, alpha = 0.7)
-        }
-
-        p <- p + scale_fill_manual(values = plot_info$colors, name = input$xlab)
-
-        if (length(plot_info$groups) >= 2) {
-          formula <- as.formula(paste(plot_info$y_var, "~", plot_info$x_var))
-
-          if (input$stat_method == "t.test") {
-            stat_test <- compare_means(formula, data = plot_info$data, method = "t.test")
-            comparisons <- combn(plot_info$groups, 2, simplify = FALSE)
-
-            y_max <- max(plot_info$data[[plot_info$y_var]])
-            step <- (input$ymax - y_max) / (length(comparisons) + 1)
-            y_positions <- seq(y_max + step, by = step, length.out = length(comparisons))
-
-            p <- p + stat_compare_means(
-              comparisons = comparisons,
-              label = "p.signif",
-              method = "t.test",
-              label.y = y_positions
-            )
-          } else if (input$stat_method %in% c("anova", "kruskal.test")) {
-            stat_test <- compare_means(formula, data = plot_info$data, method = input$stat_method)
-            p <- p + stat_compare_means(
-              label.y = max(plot_info$data[[plot_info$y_var]]) * 1.4,
-              method = input$stat_method
-            )
-          }
-        }
-
-        # Add facet if facet variable is selected
-        if (plot_info$facet_var != "None") {
-          p <- p + facet_wrap(as.formula(paste("~", plot_info$facet_var)))
-        }
-
+        p <- build_boxplot(1)
         current_box_plot(p)
         p
       },
@@ -514,11 +648,15 @@ boxplotServer <- function(id, default_data = boxplot_default_data) {
             height_inches <- input$plotHeight / 72
 
             if (input$export_format == "PNG") {
+              png_scale <- as.numeric(input$dpi) / 96
+              png_plot <- build_boxplot(png_scale)
+
               ggsave(file,
-                plot = p,
+                plot = png_plot,
                 device = "png",
-                width = width_inches,
-                height = height_inches,
+                width = input$plotWidth / 96,
+                height = input$plotHeight / 96,
+                units = "in",
                 dpi = as.numeric(input$dpi),
                 bg = "white"
               )

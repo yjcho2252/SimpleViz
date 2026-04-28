@@ -1,3 +1,4 @@
+260428 : Unified major module UI design, added rhandsontable-based TSV paste input to multiple modules, updated PCA/Volcano/DESeq2 text and export behavior, and refined plot/legend/button styling
 260422 : Changed plot input to editable matrix with TSV upload support
 260421 : Added bar plot, removed ANCOM-BC2 and DMM clustering modules, reorganized top menu
 250618 : Updated DMM cluster function
